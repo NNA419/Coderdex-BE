@@ -58,241 +58,254 @@ router.get('/', async function (req, res, next) {
   //   };
   // }
   // console.log(req.query);
-  let { page, limit, search, type } = req.query;
-  console.log(type);
+  try {
+    let { page, limit, search, type } = req.query;
+    console.log(type);
   
-  page = parseInt(page) || 1;
-  limit = parseInt(limit) || 20;
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 20;
   
-  const offset = (page * limit) - 20;
+    const offset = (page * limit) - 20;
  
 
-  let data = await fs.readFileSync("pokemons.json", "utf-8");
-  data = await JSON.parse(data);
-  if (search) {
-    data = data.filter((pokemon) => {
-      if (pokemon.Name.includes(search)) {
-        return pokemon;
-       }
-     })
-  }
-
-  if (type) {
-    data = data.filter((pokemon) => {
-     return pokemon.types.find((pokemonType) => {
-        if (pokemonType.toLowerCase() === type) {
-          console.log(pokemonType.toLowerCase() === type); 
+    let data = await fs.readFileSync("pokemons.json", "utf-8");
+    data = await JSON.parse(data);
+    if (search) {
+      data = data.filter((pokemon) => {
+        if (pokemon.Name.includes(search)) {
           return pokemon;
         }
+      })
+    }
+
+    if (type) {
+      data = data.filter((pokemon) => {
+        return pokemon.types.find((pokemonType) => {
+          if (pokemonType.toLowerCase() === type) {
+            console.log(pokemonType.toLowerCase() === type);
+            return pokemon;
+          }
+        });
       });
-    });
+    }
+  
+    data = await data.slice(offset, offset + limit);
+  
+
+    //fs.data là obj rỗng .data tạo 1 key tên là data
+    // await fs.writeFileSync("pokemons.json", JSON.stringify(pushData));
+
+    // {
+    //   "data" : [{}, {} , {}]
+    // }
+
+    // console.log(newData);
+    // data = await data.slice(0,20);
+    res.status(200).send(data);
+    // console.log(data);
+  } catch {
+    next(err);
   }
-  
-  data = await data.slice(offset, offset + limit);
-  
-
-  //fs.data là obj rỗng .data tạo 1 key tên là data
-  // await fs.writeFileSync("pokemons.json", JSON.stringify(pushData));
-
-  // {
-  //   "data" : [{}, {} , {}]
-  // }
-
-  // console.log(newData);
-  // data = await data.slice(0,20);
-  res.status(200).send(data);
-  // console.log(data);
 });
 
 // get single pokemon + 2 con 2 bên
 router.get("/:id", async function (req, res, next) {
   console.log(req.params);
-  const { id } = req.params;
-  const pokemon = {};
+  try {
+    const { id } = req.params;
+    const pokemon = {};
 
-  let dataPokes = await fs.readFileSync("pokemons.json");
-  dataPokes = await JSON.parse(dataPokes);
+    let dataPokes = await fs.readFileSync("pokemons.json");
+    dataPokes = await JSON.parse(dataPokes);
 
-  let dataIndex = dataPokes.findIndex((poke) =>
-    poke.id === parseInt(id));
-  console.log(dataPokes[dataIndex]);
+    let dataIndex = dataPokes.findIndex((poke) =>
+      poke.id === parseInt(id));
+    console.log(dataPokes[dataIndex]);
 
-  if (parseInt(id) === 1) {
-    dataPokes.find((poke) => {
-      if (poke.id === parseInt(id)) {
-        pokemon.pokemon = poke;
-      }
-      if (poke.id === dataPokes.length) {
-        pokemon.previousPokemon = poke;
-      }
-      if (poke.id === parseInt(id) + 1) {
-        pokemon.nextPokemon = poke;
-      }
-    })
-  }
+    if (parseInt(id) === 1) {
+      dataPokes.find((poke) => {
+        if (poke.id === parseInt(id)) {
+          pokemon.pokemon = poke;
+        }
+        if (poke.id === dataPokes.length) {
+          pokemon.previousPokemon = poke;
+        }
+        if (poke.id === parseInt(id) + 1) {
+          pokemon.nextPokemon = poke;
+        }
+      })
+    }
 
-  if (parseInt(id) !== 1) {
-    dataPokes.find((poke) => {
-      if (poke.id === parseInt(id)) {
-        pokemon.pokemon = poke;
-      }
-      if (poke.id === parseInt(id) - 1) {
-        pokemon.previousPokemon = poke;
-      }
-      if (poke.id === parseInt(id) + 1) {
-        pokemon.nextPokemon = poke;
-      }
-    });
-  }
+    if (parseInt(id) !== 1) {
+      dataPokes.find((poke) => {
+        if (poke.id === parseInt(id)) {
+          pokemon.pokemon = poke;
+        }
+        if (poke.id === parseInt(id) - 1) {
+          pokemon.previousPokemon = poke;
+        }
+        if (poke.id === parseInt(id) + 1) {
+          pokemon.nextPokemon = poke;
+        }
+      });
+    }
   
-  if (parseInt(id) === dataPokes.length) {
-    dataPokes.find((poke) => {
-      if (poke.id === parseInt(id)) {
-        pokemon.pokemon = poke;
-      }
-      if (poke.id === parseInt(id) - 1) {
-        pokemon.previousPokemon = poke;
-      }
-      if (poke.id === parseInt(1)) {
-        pokemon.nextPokemon = poke;
-      }
-    });
-  }
+    if (parseInt(id) === dataPokes.length) {
+      dataPokes.find((poke) => {
+        if (poke.id === parseInt(id)) {
+          pokemon.pokemon = poke;
+        }
+        if (poke.id === parseInt(id) - 1) {
+          pokemon.previousPokemon = poke;
+        }
+        if (poke.id === parseInt(1)) {
+          pokemon.nextPokemon = poke;
+        }
+      });
+    }
   
-  res.status(200).send({ data: pokemon });
+    res.status(200).send({ data: pokemon });
+  } catch {
+    next(err);
+  }
 });
 
 router.post("/", async function (req, res, next) {
-
-  const { name, id, url, types } = req.body;
-  if (!name || !id || !url || !types.length) {
-    const err = new Error("Missing required data (name, id, types or URL)");
-    err.statusCode = 401;
-    throw err;
-  }
-  if (types.length > 2) {
-    const err = new Error("Pokémon can only have one or two types.");
-    err.statusCode = 401;
-    throw err;
-  }
-  let pokeTypes = {}; // {bug:"bug", fire:"fire" , .....}
-  pokemonTypes.forEach((e) => {
-    pokeTypes[e] = e;
-  });
-
-  const newTypes = types.filter((e) => {
-    if (e === pokeTypes[e]) {
-      return e; // [" ", " "]
-    }
-  });
-
-  const type = {}; //  type = {key : e, key2:e2}
-  newTypes.forEach((e) => {
-    type[e] = e;
-  });
-
-  types.find((e) => {
-    if (e !== type[e]) {
-      const err = new Error("Pokémon's type is invalid.");
+  try {
+    const { name, id, url, types } = req.body;
+    if (!name || !id || !url || !types.length) {
+      const err = new Error("Missing required data (name, id, types or URL)");
       err.statusCode = 401;
       throw err;
     }
-  });
-
-  let data = await fs.readFileSync("pokemons.json", "utf-8"); //[]
-  data = await JSON.parse(data); //Json to JS
-  data.find((poke) => {
-    if (poke.Name === name || poke.id === id) {
-      const err = new Error("The Pokémon already exists.");
+    if (types.length > 2) {
+      const err = new Error("Pokémon can only have one or two types.");
       err.statusCode = 401;
       throw err;
+    }
+    let pokeTypes = {}; // {bug:"bug", fire:"fire" , .....}
+    pokemonTypes.forEach((e) => {
+      pokeTypes[e] = e;
+    });
+
+    const newTypes = types.filter((e) => {
+      if (e === pokeTypes[e]) {
+        return e; // [" ", " "]
+      }
+    });
+
+    const type = {}; //  type = {key : e, key2:e2}
+    newTypes.forEach((e) => {
+      type[e] = e;
+    });
+
+    types.find((e) => {
+      if (e !== type[e]) {
+        const err = new Error("Pokémon's type is invalid.");
+        err.statusCode = 401;
+        throw err;
+      }
+    });
+
+    let data = await fs.readFileSync("pokemons.json", "utf-8"); //[]
+    data = await JSON.parse(data); //Json to JS
+    data.find((poke) => {
+      if (poke.Name === name || poke.id === id) {
+        const err = new Error("The Pokémon already exists.");
+        err.statusCode = 401;
+        throw err;
+      };
+    });
+    const newData = {
+      id: data.length + 1,
+      Name: name,
+      url,
+      types: newTypes,
+      weight: faker.number.int({ min: 10, max: 100 }),
+      height: faker.number.int({ min: 10, max: 100 }),
     };
-  });
-  const newData = {
-    id: data.length + 1,
-    Name: name,
-    url,
-    types: newTypes,
-    weight: faker.number.int({ min: 10, max: 100 }),
-    height: faker.number.int({ min: 10, max: 100 }),
-  };
 
-  await data.push(newData);
-  fs.writeFileSync("pokemons.json", JSON.stringify(data));
+    await data.push(newData);
+    fs.writeFileSync("pokemons.json", JSON.stringify(data));
 
-  console.log(newData);
-  // console.log(pokeTypes);
-  res.status(200).send("Create Pokemon success!");
-
+    console.log(newData);
+    // console.log(pokeTypes);
+    res.status(200).send("Create Pokemon success!");
+  } catch (err) {
+    next(err); //chuyển lỗi đến middleware 
+  }
 });
 
 router.put("/:id", async function (req, res, next) {
-  const { id } = req.params;
-  const { name, url, types, weight, height } = req.body;
-  const allows = [
-    "Name",
-    "url",
-    "types",
-    "weight",
-    "height"
-  ];
+  try {
+    const { id } = req.params;
+    const { name, url, types, weight, height } = req.body;
+    const allows = [
+      "Name",
+      "url",
+      "types",
+      "weight",
+      "height"
+    ];
 
-  let data = await fs.readFileSync("pokemons.json", "utf-8");
-  data = await JSON.parse(data);
+    let data = await fs.readFileSync("pokemons.json", "utf-8");
+    data = await JSON.parse(data);
 
-  if (types.length > 2) {
-    const err = new Error("Pokémon can only have one or two types.");
-    err.statusCode = 401;
-    throw err;
-  }
-  let pokeTypes = {}; // {bug:"bug", fire:"fire" , .....}
-  pokemonTypes.forEach((e) => {
-    pokeTypes[e] = e;
-  });
-
-  const newTypes = types.filter((e) => {
-    if (e === pokeTypes[e]) {
-      return e; // [" ", " "]
-    }
-  });
-
-  const type = {}; //  type = {key : e, key2:e2}
-  newTypes.forEach((e) => {
-    type[e] = e;
-  });
-
-  types.find((e) => {
-    if (e !== type[e]) {
-      const err = new Error("Pokémon's type is invalid.");
+    if (types.length > 2) {
+      const err = new Error("Pokémon can only have one or two types.");
       err.statusCode = 401;
       throw err;
     }
-  });
+    let pokeTypes = {}; // {bug:"bug", fire:"fire" , .....}
+    pokemonTypes.forEach((e) => {
+      pokeTypes[e] = e;
+    });
 
-  let newData = await data.find((e) => {
-    if (e.id === parseInt(id)) {
-      return e;
-    }
-  })
+    const newTypes = types.filter((e) => {
+      if (e === pokeTypes[e]) {
+        return e; // [" ", " "]
+      }
+    });
 
-  await allows.forEach((field) => {
-    if (req.body[field] !== undefined) {
-      newData[field] = req.body[field];
-    }
-  });
+    const type = {}; //  type = {key : e, key2:e2}
+    newTypes.forEach((e) => {
+      type[e] = e;
+    });
 
-  data = await data.map((poke) => {
-    if (poke.id === parseInt(id)) {
-      return poke = newData;
-    }
+    types.find((e) => {
+      if (e !== type[e]) {
+        const err = new Error("Pokémon's type is invalid.");
+        err.statusCode = 401;
+        throw err;
+      }
+    });
+
+    let newData = await data.find((e) => {
+      if (e.id === parseInt(id)) {
+        return e;
+      }
+    })
+
+    await allows.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        newData[field] = req.body[field];
+      }
+    });
+
+    data = await data.map((poke) => {
+      if (poke.id === parseInt(id)) {
+        return poke = newData;
+      }
       return poke;
-  });
+    });
 
-  console.log(newData);
+    console.log(newData);
 
-  await fs.writeFileSync("pokemons.json", JSON.stringify(data));
-  await res.status(200).send(data);
-  
+    await fs.writeFileSync("pokemons.json", JSON.stringify(data));
+    await res.status(200).send(data);
+  } catch (err) {
+    next(err)
+  }
   
 });
 
